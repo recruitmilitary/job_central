@@ -13,6 +13,20 @@ employer.name      # => "1105 Media, Inc."
 job.title          # => "New Products Writer"
 job.industries     # => ["Media / Publishing"]
 
+== Authorization Token
+
+* You must request an authorization token from the {Direct Employers Association}[https://xmlfeed.directemployers.org] in order to fetch employers and their related jobs.
+
+* Your authorization token then must be configured in the gem setup:
+    JobCentral.configure do |config|
+      config.auth_token = ''
+    end
+
+* Assign 'config.auth_token' to your Direct Employers Association authorization token
+
+* The authorization token is available to you throughout your application as:
+    JobCentral.configuration.auth_token
+
 == Requirements
 
 * nokogiri
