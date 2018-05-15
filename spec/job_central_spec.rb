@@ -1,19 +1,29 @@
 require File.dirname(__FILE__) + '/spec_helper'
+require 'byebug'
 
 __DIR__ = File.dirname(__FILE__)
 
-FakeWeb.register_uri(:get, JobCentral::BASE_URI + "/index.asp",
+FakeWeb.register_uri(:get, JobCentral::BASE_URI + "/index.asp?authtoken=R2D2",
                      :body => File.read(__DIR__ + "/fixtures/employers.html"))
-FakeWeb.register_uri(:get, JobCentral::BASE_URI + "/feeds/1105media.xml",
+FakeWeb.register_uri(:get, JobCentral::BASE_URI + "/feeds/1105media.xml?authtoken=R2D2",
                      :body => File.read(__DIR__ + "/fixtures/1105media.xml"))
-FakeWeb.register_uri(:get, JobCentral::BASE_URI + "/feeds/1105media-2.xml",
+FakeWeb.register_uri(:get, JobCentral::BASE_URI + "/feeds/1105media-2.xml?authtoken=R2D2",
                      :body => File.read(__DIR__ + "/fixtures/1105media-2.xml"))
 
 JOB_DESCRIPTION = "Job Details\nNew Products Writer\nSend Job to Friend &amp;#187;\nApply Now &amp;#187;\nLocation: Dallas, TX\nDepartment: Editorial\nJob Type: Hire\nOpenings: 0 open, out of 1 available\n\n* \n1105 Media is looking for a detail-oriented New Products Writer in its Dallas, Texas office who can write and edit new products for several B2B magazines.\nPosition Profile:\n\nAs a New Products Writer, you will be responsible for writing 120 to 200 products per month. This requires excellent copyediting and organizational skills and the ability to describe the features and benefits of a product in 80 words or fewer. Occasionally you will be needed to proof articles and pages.\n\nResponsibilities include:\n* Writing 120 to 200 products per month.\n* Copyediting stories and page proofs.\n* Helping the editorial team post products to Web sites.\n* Sending out monthly e-mail blasts for new products.\n* Producing e-newsletters for magazines.\n\nThe ideal candidate for this position will possess the following qualifications:\n* At least one year professional experience, preferably in communications or journalism.\n* BA/BS in Journalism/English/Communications or related field of study.\nExperience in the following areas will be considered a plus:\n* HMTL coding\n* B2B publishing\n* Sitecore CMS\n1105 Media is based in Chatsworth,CA, with primary offices throughtout the United States. The company was formed in April 2006 by Nautic Partners LLC, Alta Communications, and President/CEO Neal Vitale.\nWe offer a competitive salary and a comprehensive benefits package that includes medical/dental/vision insurance, life insurance, disability insurance, 401(k) plan, and a generous paid time off (PTO)/holiday plan.\nWe are an equal opportunity employer.\nSend Job to Friend &amp;#187;\nApply Now &amp;#187;\n"
 
 describe JobCentral do
   before(:each) do
+    JobCentral.configure do |config|
+      config.auth_token = 'R2D2'
+    end
     @employers = JobCentral::Employer.all
+  end
+
+  it "returns uri with auth token" do
+    employer = @employers.first
+
+    expect(employer.feeds[0]).to eq("#{JobCentral::BASE_URI}/feeds/1105media.xml?authtoken=R2D2")
   end
 
   it "should fetch the list of employers" do
@@ -52,7 +62,7 @@ describe JobCentral do
     it "should have attributes parsed from the html" do
       @media.should_not be_nil
       @media.name.should == "1105 Media, Inc."
-      @media.feeds.should == ["#{JobCentral::BASE_URI}/feeds/1105media.xml", "#{JobCentral::BASE_URI}/feeds/1105media-2.xml"]
+      @media.feeds.should == ["#{JobCentral::BASE_URI}/feeds/1105media.xml?authtoken=R2D2", "#{JobCentral::BASE_URI}/feeds/1105media-2.xml?authtoken=R2D2"]
       @media.date_updated.should == DateTime.new(2009, 4, 12, 5, 59, 2)
       @media.jobs.should respond_to(:each)
       @media.jobs.size.should == 12 # should span across both feeds
@@ -71,7 +81,7 @@ describe JobCentral do
 
       describe "from xml" do
         before(:each) do
-          @jobs = JobCentral::Job.from_xml(JobCentral::BASE_URI + "/feeds/1105media.xml")
+          @jobs = JobCentral::Job.from_xml(JobCentral::BASE_URI + "/feeds/1105media.xml?authtoken=R2D2")
           @writer = @jobs.first
         end
 
